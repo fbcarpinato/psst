@@ -1,35 +1,32 @@
-use crate::data::config::SortCriteria;
-use crate::data::Track;
-use crate::error::Error;
 use crate::{
-    cmd,
+    cmd::{self, TOGGLE_SIDEBAR},
     controller::{
-        AfterDelay, AlertCleanupController, NavController, SessionController, SortController,
+        AfterDelay, AlertCleanupController, NavController, SessionController, SidebarController,
+        SortController,
     },
     data::{
-        config::SortOrder, Alert, AlertStyle, AppState, Config, Nav, Playable, Playback, Route,
-        ALERT_DURATION,
+        config::{SortCriteria, SortOrder},
+        Alert, AlertStyle, AppState, Config, Nav, Playable, Playback, Route, Track, ALERT_DURATION,
     },
+    error::Error,
     webapi::WebApi,
     widget::{
-        icons, icons::SvgIcon, Border, Empty, MyWidgetExt, Overlay, RemoteImage, ThemeScope,
-        ViewDispatcher,
+        icons::{self, SvgIcon},
+        Border, Empty, MyWidgetExt, Overlay, RemoteImage, ThemeScope, ViewDispatcher,
     },
 };
 use credits::TrackCredits;
-use druid::widget::Controller;
-use druid::KbKey;
 use druid::{
     im::Vector,
     widget::{
-        CrossAxisAlignment, Either, Flex, Label, LineBreaking, List, Scroll, Slider, Split,
-        ViewSwitcher,
+        Controller, CrossAxisAlignment, Either, Flex, Label, LineBreaking, List, Scroll, Slider,
+        Split, ViewSwitcher,
     },
-    Color, Env, Insets, Key, LensExt, Menu, MenuItem, Selector, Widget, WidgetExt, WindowDesc,
+    Color, Env, Insets, KbKey, Key, LensExt, Menu, MenuItem, Selector, Widget, WidgetExt,
+    WindowDesc,
 };
 use druid_shell::Cursor;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 pub mod album;
 pub mod artist;
@@ -109,7 +106,8 @@ pub fn account_setup_window() -> WindowDesc<AppState> {
 pub fn artwork_window() -> WindowDesc<AppState> {
     let win_size = (theme::grid(50.0), theme::grid(50.0));
 
-    // On Windows, the window size includes the titlebar, so we need to account for it
+    // On Windows, the window size includes the titlebar, so we need to account for
+    // it
     let win_size = if cfg!(target_os = "windows") {
         const WINDOWS_TITLEBAR_OFFSET: f64 = 24.0; // Standard Windows titlebar height
         (win_size.0, win_size.1 + WINDOWS_TITLEBAR_OFFSET)
@@ -212,7 +210,7 @@ pub fn artwork_widget() -> impl Widget<AppState> {
     .controller(ArtworkController)
 }
 
-fn root_widget() -> impl Widget<AppState> {
+fn sidebar_widget() -> impl Widget<AppState> {
     let playlists = Scroll::new(playlist::list_widget())
         .vertical()
         .expand_height();
@@ -238,36 +236,46 @@ fn root_widget() -> impl Widget<AppState> {
         .fix_height(88.0)
         .background(Border::Top.with_color(theme::GREY_500));
 
-    let sidebar = Flex::column()
+    Flex::column()
         .with_flex_child(playlists, 1.0)
         .with_child(controls)
-        .background(theme::BACKGROUND_DARK);
+        .background(theme::BACKGROUND_DARK)
+}
 
+fn main_widget() -> impl Widget<AppState> {
     let topbar = Flex::row()
         .must_fill_main_axis(true)
+        .with_child(topbar_toggle_sidebar_widget())
         .with_child(topbar_back_button_widget())
         .with_flex_child(topbar_title_widget(), 1.0)
         .with_child(topbar_sort_widget())
         .background(Border::Bottom.with_color(theme::BACKGROUND_DARK));
 
-    let main = Flex::column()
+    Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .with_child(topbar)
         .with_flex_child(Overlay::bottom(route_widget(), alert_widget()), 1.0)
         .with_child(playback::panel_widget())
-        .background(theme::BACKGROUND_LIGHT);
+        .background(theme::BACKGROUND_LIGHT)
+}
 
-    let split = Split::columns(sidebar, main)
-        .split_point(0.2)
-        .bar_size(1.0)
-        .min_size(150.0, 300.0)
-        .min_bar_area(1.0)
-        .solid_bar(true);
+fn root_widget() -> impl Widget<AppState> {
+    let split = Either::new(
+        |data: &AppState, _| data.sidebar_expanded,
+        Split::columns(sidebar_widget(), main_widget())
+            .split_point(0.2)
+            .bar_size(1.0)
+            .min_size(150.0, 300.0)
+            .min_bar_area(1.0)
+            .solid_bar(true),
+        main_widget(),
+    );
 
     ThemeScope::new(split)
         .controller(SessionController)
         .controller(NavController)
         .controller(SortController)
+        .controller(SidebarController)
         .on_command_async(
             cmd::LOAD_TRACK_CREDITS,
             |track: Arc<Track>| {
@@ -536,6 +544,17 @@ fn topbar_sort_widget() -> impl Widget<AppState> {
         disabled,
     )
     .padding(theme::grid(1.0)) //.lens(AppState::nav)
+}
+
+fn topbar_toggle_sidebar_widget() -> impl Widget<AppState> {
+    let icon = icons::HAMBURGER.scale((10.0, theme::grid(2.0)));
+    icon.padding(theme::grid(1.0))
+        .link()
+        .rounded(theme::BUTTON_BORDER_RADIUS)
+        .on_left_click(|ctx, _, _, _| {
+            ctx.submit_command(TOGGLE_SIDEBAR);
+        })
+        .padding(theme::grid(1.0))
 }
 
 fn topbar_back_button_widget() -> impl Widget<AppState> {

@@ -88,6 +88,7 @@ pub struct AppState {
     pub added_queue: Vector<QueueEntry>,
     pub lyrics: Promise<Vector<TrackLines>>,
     pub credits: Option<TrackCredits>,
+    pub sidebar_expanded: bool,
 }
 
 impl AppState {
@@ -171,6 +172,7 @@ impl AppState {
             finder: Finder::new(),
             lyrics: Promise::Empty,
             credits: None,
+            sidebar_expanded: true,
         }
     }
 }
@@ -342,6 +344,12 @@ impl AppState {
         let now = Instant::now();
         self.alerts
             .retain(|alert| now.duration_since(alert.created_at) < ALERT_DURATION);
+    }
+}
+
+impl AppState {
+    pub fn toggle_sidebar(&mut self) {
+        self.sidebar_expanded = !self.sidebar_expanded;
     }
 }
 

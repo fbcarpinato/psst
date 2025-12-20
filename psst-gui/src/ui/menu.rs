@@ -88,4 +88,11 @@ fn view_menu() -> Menu<AppState> {
                 .command(cmd::TOGGLE_FINDER)
                 .hotkey(SysMods::Cmd, "f"),
         )
+        .entry(
+            MenuItem::new(
+                LocalizedString::new("menu-item-toggle-sidebar").with_placeholder("Toggle Sidebar"),
+            )
+            .command(cmd::TOGGLE_SIDEBAR)
+            .hotkey(SysMods::Cmd, "b"),
+        )
 }

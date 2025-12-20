@@ -25,9 +25,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{
     cmd,
-    data::Nav,
     data::{
-        AppState, Config, NowPlaying, Playable, Playback, PlaybackOrigin, PlaybackState,
+        AppState, Config, Nav, NowPlaying, Playable, Playback, PlaybackOrigin, PlaybackState,
         QueueBehavior, QueueEntry,
     },
     ui::lyrics,
@@ -370,7 +369,8 @@ impl PlaybackController {
         if let Some(now_playing) = &data.playback.now_playing {
             let seek_duration = Duration::from_secs(data.config.seek_duration as u64);
 
-            // Calculate new position, ensuring it does not exceed duration for forward seeks.
+            // Calculate new position, ensuring it does not exceed duration for forward
+            // seeks.
             let seek_position = if forward {
                 now_playing.progress + seek_duration
             } else {
@@ -644,7 +644,8 @@ where
     }
 }
 
-// This uses the current system time to generate a random lowercase string of a given length.
+// This uses the current system time to generate a random lowercase string of a
+// given length.
 fn random_lowercase_string(len: usize) -> String {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)

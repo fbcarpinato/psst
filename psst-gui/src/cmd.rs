@@ -1,8 +1,7 @@
 use crate::data::Track;
 use druid::{Selector, WidgetId};
 use psst_core::{item_id::ItemId, player::item::PlaybackItem};
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use crate::{
     data::{Nav, PlaybackPayload, QueueBehavior, QueueEntry},
@@ -20,6 +19,9 @@ pub const QUIT_APP_WITH_SAVE: Selector = Selector::new("app.quit-with-save");
 pub const SET_FOCUS: Selector = Selector::new("app.set-focus");
 pub const COPY: Selector<String> = Selector::new("app.copy-to-clipboard");
 pub const GO_TO_URL: Selector<String> = Selector::new("app.go-to-url");
+
+// Sidebar
+pub const TOGGLE_SIDEBAR: Selector = Selector::new("app.toggle-sidebar");
 
 // Find
 pub const TOGGLE_FINDER: Selector = Selector::new("app.show-finder");
